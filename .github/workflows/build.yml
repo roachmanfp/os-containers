@@ -5,10 +5,16 @@ on:
   push:
     branches: ["main"]
 
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       - uses: actions/checkout@v4
@@ -17,7 +23,7 @@ jobs:
         id: buildah
         uses: redhat-actions/buildah-build@v2
         with:
-          image: roach-os
+          image: ${{ env.IMAGE_NAME }}
           tags: latest ${{ github.sha }}
           containerfiles: |
             ./Containerfile
@@ -25,13 +31,13 @@ jobs:
       - name: Login to GHCR
         uses: redhat-actions/podman-login@v1
         with:
-          registry: ghcr.io/roachmanfp
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Push container
         uses: redhat-actions/push-to-registry@v2
         with:
-          image: ${{ steps.buildah.outputs.image }}
+          image: ${{ env.IMAGE_NAME }}
           tags: ${{ steps.buildah.outputs.tags }}
-          registry: ghcr.io/roachmanfp
+          registry: ${{ env.REGISTRY }}
