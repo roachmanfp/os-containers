@@ -23,7 +23,7 @@ jobs:
             ./Containerfile
 
       - name: Login to GHCR
-        uses: redhat-actions/podman-login
+        uses: redhat-actions/podman-login@v1
         with:
           registry: ghcr.io/roachmanfp
           username: ${{ github.actor }}
