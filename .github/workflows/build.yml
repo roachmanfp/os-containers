@@ -10,7 +10,7 @@ env:
   IMAGE_NAME: ${{ github.event.repository.name }}
 
 jobs:
-  build:
+  container:
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -42,3 +42,65 @@ jobs:
           image: ${{ steps.buildah.outputs.image }}
           tags: ${{ steps.buildah.outputs.tags }}
           registry: ${{ env.REGISTRY }}
+
+  iso:
+    needs: container
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pull container and generate qcow2
+        run: |
+          sudo podman pull ${{env.REGISTRY}}/${{ env.IMAGE_NAME }}:latest
+          mkdir output
+          sudo podman run \
+            --rm \
+            -it \
+            --privileged \
+            --pull=newer \
+            --security-opt label=type:unconfined_t \
+            -v $(pwd)/config.toml:/config.toml:ro \
+            -v $(pwd)/output:/output. \
+            -v /var/lib/containers/storage:/var/lib/containers/storage \
+            quay.io/centos-bootc/bootc-image-builder:latest \
+            --type iso \
+            --rootfs btrfs \
+            --local \
+            ${{env.REGISTRY}}/${{ env.IMAGE_NAME }}:latest
+
+      - name: Publish artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: iso
+          path: output/
+
+  qcow2:
+    needs: container
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pull container and generate qcow2
+        run: |
+          sudo podman pull ${{env.REGISTRY}}/${{ env.IMAGE_NAME }}:latest
+          mkdir output
+          sudo podman run \
+            --rm \
+            -it \
+            --privileged \
+            --pull=newer \
+            --security-opt label=type:unconfined_t \
+            -v $(pwd)/config.toml:/config.toml:ro \
+            -v $(pwd)/output:/output. \
+            -v /var/lib/containers/storage:/var/lib/containers/storage \
+            quay.io/centos-bootc/bootc-image-builder:latest \
+            --type iso \
+            --rootfs qcow2 \
+            --local \
+            ${{env.REGISTRY}}/${{ env.IMAGE_NAME }}:latest
+
+      - name: Publish artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: iso
+          path: output/
