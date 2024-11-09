@@ -1,0 +1,4 @@
+[[customizations.user]]
+name = "roachmanfp"
+key = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIHznIMVjiaUq59gslxlymjDnF8SiUFcxM2fHsA4JiLfM roachmanfp@roachtopl"
+groups = ["wheel"]

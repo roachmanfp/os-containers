@@ -1,0 +1,40 @@
+name: Generate ISO
+
+on:
+  push:
+    branches: ["main"]
+
+env:
+  REGISTRY: "ghcr.io/${{ github.repository_owner }}"
+  IMAGE_NAME: ${{ github.event.repository.name }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pull container and generate qcow2
+        run: |
+          sudo podman pull ${{env.REGISTRY}}/${{ env.IMAGE_NAME }}:latest
+          sudo podman run \
+            --rm \
+            -it \
+            --privileged \
+            --pull=newer \
+            --security-opt label=type:unconfined_t \
+            -v $(pwd)/config.toml:/config.toml:ro \
+            -v $(pwd)/output.qcow2:/output.qcow2 \
+            -v /var/lib/containers/storage:/var/lib/containers/storage \
+            quay.io/centos-bootc/bootc-image-builder:latest \
+            --type qcow2 \
+            --rootfs btrfs \
+            --local \
+            ${{env.REGISTRY}}/${{ env.IMAGE_NAME }}:latest
+
+      - name: Publish qcow2
+        uses: actions/upload-artifact@v4
+        with:
+          name: image
+          path: output.qcow2
