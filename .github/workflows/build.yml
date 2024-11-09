@@ -1,0 +1,37 @@
+# Largely stolen from https://www.redhat.com/en/blog/build-ubi-containers-github-actions-buildah-and-podman
+name: Build container
+
+on:
+  push:
+    branches: ["main"]
+
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Buildah
+        id: buildah
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: roach-os
+          tags: latest ${{ github.sha }}
+          containerfiles: |
+            ./Containerfile
+
+      - name: Login to GHCR
+        uses: redhat-actions/podman-login
+        with:
+          registry: ghcr.io/roachmanfp
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push container
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: ${{ steps.buildah.outputs.image }}
+          tags: ${{ steps.buildah.outputs.tags }}
+          registry: ghcr.io/roachmanfp
