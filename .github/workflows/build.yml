@@ -53,6 +53,7 @@ jobs:
         run: |
           sudo podman pull ${{env.REGISTRY}}/${{ env.IMAGE_NAME }}:latest
           mkdir output
+          # Seems to be broken? https://github.com/osbuild/bootc-image-builder/issues/699
           sudo podman run \
             --rm \
             --privileged \
@@ -92,8 +93,8 @@ jobs:
             -v $(pwd)/output:/output. \
             -v /var/lib/containers/storage:/var/lib/containers/storage \
             quay.io/centos-bootc/bootc-image-builder:latest \
-            --type iso \
-            --rootfs qcow2 \
+            --type qcow2 \
+            --rootfs btrfs \
             --local \
             ${{env.REGISTRY}}/${{ env.IMAGE_NAME }}:latest
 
